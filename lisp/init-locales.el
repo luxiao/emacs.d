@@ -17,36 +17,38 @@
   (set-selection-coding-system (if (eq system-type 'windows-nt) 'utf-16-le 'utf-8))
   (prefer-coding-system 'utf-8))
 
-                                        ;python dev
+
 (elpy-enable)
 (elpy-use-ipython)
-(require 'init-auto-complete)
 
-;mysql client
+(add-hook 'sql-interactive-mode-hook
+          (lambda ()
+            (toggle-truncate-lines t)))
+
 (setq sql-mysql-login-params
-      '((user :default "your_user_dev")
-        (database :default "your_database")
-        (server :default "your_mysql")
+      '((user :default "risk_user_dev")
+        (database :default "risk_list_00")
+        (server :default "rdsuueafyuqbzfu.mysql.rds.aliyuncs.com")
         (port :default 3306)
-        (password :default "your_password")))
+        (password :default "risk_user_dev_a7fbd6")))
 
 (setq sql-connection-alist
-      '((yours.dev (sql-product 'mysql)
-                   (sql-port 3306)
-                   (sql-server "your_mysql")
-                   (sql-user "your_user_dev")
-                   (sql-database "your_db")
-                   (sql-password "your_password"))
+      '((rds.dev (sql-product 'mysql)
+                 (sql-port 3306)
+                 (sql-server "rdsuueafyuqbzfu.mysql.rds.aliyuncs.com")
+                 (sql-user "risk_user_dev")
+                 (sql-database "risk_list_00")
+                 (sql-password "risk_user_dev_a7fbd6"))
         (local.mysql (sql-product 'mysql)
                      (sql-port 3306)
                      (sql-server "127.0.0.1")
                      (sql-user "root")
-                     (sql-password "root")
-                     (sql-database "test"))))
+                     (sql-password "")
+                     (sql-database "blacklist"))))
 
 (defun za-rds-dev ()
   (interactive)
-  (my-sql-connect 'mysql 'yours.dev))
+  (my-sql-connect 'mysql 'rds.dev))
 
 (defun local-mysql ()
   (interactive)
@@ -57,5 +59,7 @@
   (sql-connect connection))
 (global-set-key "\C-cs" 'shell)
 (global-set-key "\C-ct" 'ansi-term)
+
+                                        ;(require 'init-auto-complete)
 
 (provide 'init-locales)
