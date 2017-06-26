@@ -61,5 +61,6 @@
 (global-set-key "\C-ct" 'ansi-term)
 
                                         ;(require 'init-auto-complete)
+(require 'solidity-mode)
 
 (provide 'init-locales)
