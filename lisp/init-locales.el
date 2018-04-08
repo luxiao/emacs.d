@@ -58,7 +58,6 @@
   (setq sql-product product)
   (sql-connect connection))
 (global-set-key "\C-cs" 'shell)
-(global-set-key "\C-ct" 'ansi-term)
 
                                         ;(require 'init-auto-complete)
 (require 'solidity-mode)
