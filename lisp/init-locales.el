@@ -17,7 +17,7 @@
   (set-selection-coding-system (if (eq system-type 'windows-nt) 'utf-16-le 'utf-8))
   (prefer-coding-system 'utf-8))
 
-
+(add-to-list 'default-frame-alist '(font . "Source Code Pro-13"))
 (elpy-enable)
 (elpy-use-ipython)
 
@@ -61,5 +61,17 @@
 
                                         ;(require 'init-auto-complete)
 (require 'solidity-mode)
+(require 'restclient)
+(add-to-list 'auto-mode-alist '("\\.restc\\'" . restclient-mode))
+
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
 
 (provide 'init-locales)
