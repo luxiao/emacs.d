@@ -222,11 +222,9 @@ Version 2018-10-12"
 
 ;;; proxy
 (require 'socks)
-(setq socks-noproxy '("localhost" "127.0.0.1" "nsso.zhonganinfo.com" "devpilot.zhonganonline.com"))
+(setq socks-noproxy (split-string (or (getenv "no_proxy") "localhost,127.0.0.1") ","))
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 1080 5))
-(setq url-proxy-services
-      '(("no_proxy" . "\\(localhost\\|127.0.0.1\\|::1\\|*.zhonganinfo.com\\|*.zhonganonline.com\\)")))
 
 ;; chatgpt
 ;;(use-package chatgpt  :bind ("C-c q" . chatgpt-query))
@@ -235,11 +233,6 @@ Version 2018-10-12"
 ;;(with-eval-after-load 'magit
 ;;  (require 'forge))
 
-;;(ghub-request "GET" "/user" nil
-;;             :forge 'gitlab
-;;            :host "git.zhonganinfo.com"
-;;           :username "za-luxiao"
-;;          :auth 'forge)
 
 (princ (concat (format "Emacs version: %s\n" (emacs-version))
                (format "org version: %s\n" (org-version))))
