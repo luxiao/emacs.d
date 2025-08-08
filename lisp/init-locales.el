@@ -211,17 +211,22 @@ Version 2018-10-12"
 (setq cua-enable-cua-keys nil)
 ;;; translate
 (use-package gt :ensure t)
-(setq gt-lang '(en zh))
+(setq gt-langs '(en zh))
 (setq gt-default-translator
       (gt-translator
-       :taker   (gt-taker :text 'buffer :pick 'paragraph)  ; config the Taker
-       :engines (list (gt-bing-engine) (gt-google-engine)) ; specify the Engines
-       :render  (gt-buffer-render)))                       ; config the Render
+       :taker   (gt-taker :text 'buffer :pick 'paragraph)
+       :engines (list (gt-google-engine
+                       ))
+       :render  (gt-buffer-render)))
+(setq gt-http-proxy "socks5://127.0.0.1:1080")
+
 ;;; proxy
 (require 'socks)
-(setq socks-noproxy '("localhost"))
+(setq socks-noproxy '("localhost" "127.0.0.1" "nsso.zhonganinfo.com" "devpilot.zhonganonline.com"))
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 1080 5))
+(setq url-proxy-services
+      '(("no_proxy" . "\\(localhost\\|127.0.0.1\\|::1\\|*.zhonganinfo.com\\|*.zhonganonline.com\\)")))
 
 ;; chatgpt
 ;;(use-package chatgpt  :bind ("C-c q" . chatgpt-query))
@@ -244,41 +249,57 @@ Version 2018-10-12"
 (require 'emms-setup)
 (emms-all)
 (setq emms-player-list '(emms-player-mpv))
-(defun my-emms-next ()
-  "If there is no next track, go to the first track and play. Works without switching buffer."
+(setq-default
+ emms-volume-change-function 'emms-volume-mpv-change
+ emms-volume-mpv-method 'smart
+ emms-player-mpv-parameters '("--quiet" "--really-quiet" "--no-audio-display" "--force-window=no" "--vo=null"))
+(setq my-mpv-ipc-socket (expand-file-name "emms/mpv-ipc.sock" user-emacs-directory))
+(defun my-mpv-ipc-send (cmd)
+  "Send JSON command to mpv via its IPC socket."
+  (let ((proc (make-network-process
+               :name "mpv-ipc"
+               :buffer nil
+               :family 'local
+               :service my-mpv-ipc-socket)))
+    (process-send-string proc (concat cmd "\n"))
+    (delete-process proc)))
+(defun my-emms-volume-up ()
   (interactive)
-  (if (emms-playlist-next)
-      (emms-next-noerror) ;; 如果有下一首曲目，正常跳到下一首
-    (progn
-      (emms-playlist-current-select-first)
-      ;;      (emms-playlist-mode) ;; 切换到播放列表并跳到第一首曲目
-      (emms-start))))            ;; 开始播放
+  (my-mpv-ipc-send "{ \"command\": [\"add\", \"volume\", 5] }"))
+(defun my-emms-volume-down ()
+  (interactive)
+  (my-mpv-ipc-send "{ \"command\": [\"add\", \"volume\", -5] }"))
 (require 'transient)
 (transient-define-prefix emms-menu ()
-                         "EMMS commands menu"
-                         ["播放"
-                          ("f" "show" emms-show)
-                          ("P" "Play" emms-start)
-                          ("p" "Pause" emms-pause)
-                          ("s" "Stop" emms-stop)
-                          ("n" "Next Track" emms-next)
-                          ("b" "Previous Track" emms-previous)
-                          ]
-                         ["歌单"
-                          ("z" "Save Playlist" emms-playlist-save)
-                          ("o" "Play Playlist" emms-play-playlist)
-                          ("a" "Play Directory" emms-play-directory)
-                          ]
-                         )
-
+  "EMMS commands menu"
+  ["播放"
+   ("f" "show" emms-show)
+   ("P" "Play" emms-start)
+   ("p" "Pause" emms-pause)
+   ("s" "Stop" emms-stop)
+   ("n" "Next Track" emms-next)
+   ("b" "Previous Track" emms-previous)
+   ("+" "Volume Up" my-emms-volume-up :transient t)
+   ("-" "Volume Down" my-emms-volume-down :transient t)
+   ("q" "Quit" transient-quit-one)
+   ]
+  ["歌单"
+   ("z" "Save Playlist" emms-playlist-save)
+   ("o" "Play Playlist" emms-play-playlist)
+   ("a" "Play Directory" emms-play-directory)
+   ]
+  )
+(setq emms-source-file-default-directory "~/Music/")
 (global-set-key (kbd "C-c e") 'emms-menu)
 (require 'emms-mode-line)
 (emms-mode-line 1)
 ;; yas
-(add-hook 'prog-mode-hook #'hs-minor-mode)
-(add-hook 'restclient-mode-hook #'yas-minor-mode-on)
+(add-to-list 'load-path (locate-user-emacs-file "snippets/"))
+(require 'yasnippet)
+(yas-global-mode 1)
 (global-set-key (kbd "C-c y") 'yas-insert-snippet)
-(add-to-list 'Info-directory-list "/Users/lux/.emacs.d/info/")
+;; info
+(add-to-list 'Info-directory-list "~/.emacs.d/info/")
 ;; Load LilyPond
 (setq load-path (append '("/opt/homebrew/share/emacs/site-lisp/lilypond") load-path))
 (autoload 'LilyPond-mode "lilypond-mode")
@@ -402,12 +423,24 @@ Version 2018-10-12"
 (dolist (hook '(tsx-ts-mode-hook
                 typescript-ts-mode-hook
                 js-ts-mode-hook))
-  (add-hook hook
+  (Add-hook hook
             (lambda ()
               (setq tab-width 4
                     indent-tabs-mode nil))))
 (require 'alert)
 
 (alert "This is an alert" :style 'osx-notifier :severity 'high :title "hello alert")
+;;claude code
+(use-package eat :ensure t)
+(use-package claude-code :ensure t
+  :vc (:url "https://github.com/stevemolitor/claude-code.el" :rev :newest)
+  :config (claude-code-mode)
+  :bind-keymap ("C-c c" . claude-code-command-map))
+(defun my-claude-notify (title message)
+  "Display a macOS notification with sound."
+  (call-process "osascript" nil nil nil
+                "-e" (format "display notification \"%s\" with title \"%s\" sound name \"Glass\""
+                             message title)))
+
 (provide 'init-locales)
 ;;; init-locales.el ends here
