@@ -219,25 +219,25 @@ Version 2018-10-12"
                        ))
        :render  (gt-buffer-render)))
 (setq gt-http-proxy "socks5://127.0.0.1:1080")
+;; 设置翻译结果输出方式
+(setq gt-buffer-render-follow-p t)  ; 跟随当前窗口
+(setq gt-buffer-render-window-config nil)  ; 不创建新窗口
 
+(global-set-key (kbd "C-c t") 'gt-translate)
 ;;; proxy
 (require 'socks)
 (setq socks-noproxy (split-string (or (getenv "no_proxy") "localhost,127.0.0.1") ","))
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 1080 5))
 
-;; chatgpt
-;;(use-package chatgpt  :bind ("C-c q" . chatgpt-query))
-
-;; forge & ghub
-;;(with-eval-after-load 'magit
-;;  (require 'forge))
-
-
 (princ (concat (format "Emacs version: %s\n" (emacs-version))
                (format "org version: %s\n" (org-version))))
 ;; epub
+(setq nov-temporary-directory (expand-file-name "nov-cache" user-emacs-directory))
+(make-directory nov-temporary-directory t)
+(setq nov-save-place-file (expand-file-name "nov-places" nov-temporary-directory))
 (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+
 ;; emms
 (require 'emms-setup)
 (emms-all)
@@ -434,6 +434,9 @@ Version 2018-10-12"
   (call-process "osascript" nil nil nil
                 "-e" (format "display notification \"%s\" with title \"%s\" sound name \"Glass\""
                              message title)))
-
+;; easypg
+(setq epg-pinentry-mode 'loopback)
+(setq epg-gpg-extra-args '("--pinentry-mode"
+                           "loopback"))
 (provide 'init-locales)
 ;;; init-locales.el ends here
