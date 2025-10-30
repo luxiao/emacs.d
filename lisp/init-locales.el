@@ -24,8 +24,8 @@
 (require 'package)
 
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-                                        ; list the packages you want
-(setq package-list '(dracula-theme web-mode undo-tree go-mode lua-mode yasnippet-snippets restclient emms quelpa-use-package graphviz-dot-mode gt ))
+;;; list the packages you want
+(setq package-list '(dracula-theme web-mode undo-tree go-mode lua-mode yasnippet-snippets restclient emms quelpa-use-package graphviz-dot-mode gt zenburn-theme nov))
 (dolist (pkg package-list)
   (unless (package-installed-p pkg)
     (package-install pkg))
@@ -37,7 +37,6 @@
 (defun sanityinc/utf8-locale-p (v)
   "Return whether locale string V relates to a UTF-8 locale."
   (and v (string-match-p "UTF-8" v)))
-
 (setq python-shell-interpreter "ipython"
       python-shell-interpreter-args "-i --simple-prompt")
 
@@ -204,8 +203,8 @@ Version 2018-10-12"
 (global-set-key "\C-xC-6d" 'base64-decode-region)
 (global-set-key "\C-xC-6e" 'base64-encode-region)
 (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
-(load-theme 'dracula t)
-;;(global-linum-mode 0)
+(load-theme 'zenburn t)
+(global-display-line-numbers-mode nil)
 
 (electric-pair-mode 1)
 (setq cua-enable-cua-keys nil)
@@ -218,11 +217,13 @@ Version 2018-10-12"
        :engines (list (gt-google-engine
                        ))
        :render  (gt-buffer-render)))
+(add-to-list 'display-buffer-alist
+             '("\\*GT-Translate\\*"
+               (display-buffer-reuse-window
+                display-buffer-in-side-window)
+               (side . right)
+               (slot . 0)))
 (setq gt-http-proxy "socks5://127.0.0.1:1080")
-;; 设置翻译结果输出方式
-(setq gt-buffer-render-follow-p t)  ; 跟随当前窗口
-(setq gt-buffer-render-window-config nil)  ; 不创建新窗口
-
 (global-set-key (kbd "C-c t") 'gt-translate)
 ;;; proxy
 (require 'socks)
@@ -267,25 +268,27 @@ Version 2018-10-12"
   "EMMS commands menu"
   ["播放"
    ("f" "show" emms-show)
-   ("P" "Play" emms-start)
-   ("p" "Pause" emms-pause)
-   ("s" "Stop" emms-stop)
+   ("z" "Pause" emms-pause)
    ("n" "Next Track" emms-next)
-   ("b" "Previous Track" emms-previous)
+   ("p" "Previous Track" emms-previous)
    ("+" "Volume Up" my-emms-volume-up :transient t)
    ("-" "Volume Down" my-emms-volume-down :transient t)
    ("q" "Quit" transient-quit-one)
    ]
   ["歌单"
-   ("z" "Save Playlist" emms-playlist-save)
+   ("s" "Save Playlist" emms-playlist-save)
    ("o" "Play Playlist" emms-play-playlist)
-   ("a" "Play Directory" emms-play-directory)
+   ("d" "Play Directory" emms-play-directory)
+   ("a" "Add file" emms-add-file)
    ]
   )
 (setq emms-source-file-default-directory "~/Music/")
 (global-set-key (kbd "C-c e") 'emms-menu)
 (require 'emms-mode-line)
 (emms-mode-line 1)
+(require 'emms-lyrics)
+(emms-lyrics 1)
+(setq emms-lyrics-dir "~/Music/lyrics/")
 ;; yas
 (add-to-list 'load-path (locate-user-emacs-file "snippets/"))
 (require 'yasnippet)
@@ -334,7 +337,9 @@ Version 2018-10-12"
         (toml "https://github.com/tree-sitter/tree-sitter-toml")
         (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
         (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+        (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+        (java "https://github.com/tree-sitter/tree-sitter-java")
+        ))
 (use-package treesit
   :mode (("\\.tsx\\'" . tsx-ts-mode)
          ("\\.js\\'"  . typescript-ts-mode)
@@ -346,6 +351,8 @@ Version 2018-10-12"
          ("\\.json\\'" .  json-ts-mode)
          ("\\.Dockerfile\\'" . dockerfile-ts-mode)
          ("\\.prisma\\'" . prisma-ts-mode)
+         ("\\.java\\'" . java-ts-mode)
+         ("\\.go\\'" . go-ts-mode)
          ;; More modes defined here...
          )
   :config
@@ -377,7 +384,10 @@ Version 2018-10-12"
                                                                     :rope_completion (:enabled t)
                                                                     :autopep8 (:enabled nil))))))
      ((js-ts-mode typescript-ts-mode tsx-ts-mode) .
-      ("typescript-language-server" "--stdio"))))
+      ("typescript-language-server" "--stdio"))
+     ((java-mode java-ts-mode) . ("jdtls"))
+     ((go-mode go-ts-mode) . ("gopls"))
+     ))
   :config
   (setq-default
    eglot-workspace-configuration
@@ -404,6 +414,8 @@ Version 2018-10-12"
          (js-ts-mode . eglot-ensure)
          (typescript-ts-mode . eglot-ensure)
          (tsx-ts-mode . eglot-ensure)
+         (java-ts-mode . eglot-ensure)
+         (go-ts-mode . eglot-ensure)
          ;; Python-specific settings
          (python-ts-mode . (lambda ()
                              (setq-local indent-tabs-mode nil
@@ -416,15 +428,15 @@ Version 2018-10-12"
 (dolist (hook '(tsx-ts-mode-hook
                 typescript-ts-mode-hook
                 js-ts-mode-hook))
-  (Add-hook hook
+  (add-hook hook
             (lambda ()
               (setq tab-width 4
                     indent-tabs-mode nil))))
 (require 'alert)
-
 (alert "This is an alert" :style 'osx-notifier :severity 'high :title "hello alert")
 ;;claude code
 (use-package eat :ensure t)
+(setq eat-enable-logging t)
 (use-package claude-code :ensure t
   :vc (:url "https://github.com/stevemolitor/claude-code.el" :rev :newest)
   :config (claude-code-mode)
@@ -438,5 +450,10 @@ Version 2018-10-12"
 (setq epg-pinentry-mode 'loopback)
 (setq epg-gpg-extra-args '("--pinentry-mode"
                            "loopback"))
+(defun myzaotp ()
+  "My za-otp"
+  (interactive)
+  (shell-command "2fa -clip zaotp"))
+
 (provide 'init-locales)
 ;;; init-locales.el ends here
