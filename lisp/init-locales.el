@@ -209,22 +209,18 @@ Version 2018-10-12"
 (electric-pair-mode 1)
 (setq cua-enable-cua-keys nil)
 ;;; translate
-(use-package gt :ensure t)
-(setq gt-langs '(en zh))
-(setq gt-default-translator
-      (gt-translator
-       :taker   (gt-taker :text 'buffer :pick 'paragraph)
-       :engines (list (gt-google-engine
-                       ))
-       :render  (gt-buffer-render)))
-(add-to-list 'display-buffer-alist
-             '("\\*GT-Translate\\*"
-               (display-buffer-reuse-window
-                display-buffer-in-side-window)
-               (side . right)
-               (slot . 0)))
+(use-package gt
+  :ensure t
+  :init
+  (setq gt-langs '(en zh))
+  (setq gt-default-translator
+        (gt-translator
+         :taker   (gt-taker :text 'buffer :pick 'paragraph)
+         :engines (list (gt-google-engine
+                         ))
+         :render  (gt-buffer-render))))
 (setq gt-http-proxy "socks5://127.0.0.1:1080")
-(global-set-key (kbd "C-c t") 'gt-translate)
+;;(global-set-key (kbd "C-c t") 'gt-translate)
 ;;; proxy
 (require 'socks)
 (setq socks-noproxy (split-string (or (getenv "no_proxy") "localhost,127.0.0.1") ","))
@@ -450,10 +446,30 @@ Version 2018-10-12"
 (setq epg-pinentry-mode 'loopback)
 (setq epg-gpg-extra-args '("--pinentry-mode"
                            "loopback"))
-(defun myzaotp ()
-  "My za-otp"
-  (interactive)
-  (shell-command "2fa -clip zaotp"))
+;; otp
+(transient-define-prefix otp-menu ()
+  "OTP commands menu"
+  ["za"
+   ("z" "za-otp" (lambda () (interactive) (shell-command "2fa -clip zaotp")))
+   ("h" "luxiao@hw-cloud" (lambda () (interactive) (shell-command "2fa -clip hwcloud")))
+   ]
+  )
+(global-set-key (kbd "C-c o") #'otp-menu)
+;; 计算hash
+(defun hash-calc (algo)
+  "Prompt input, calculate hash using ALGO, copy to kill-ring."
+  (let* ((input (read-string (format "输入要计算 %s 的字符串: " algo)))
+         (hash  (secure-hash algo input)))
+    (kill-new hash)
+    (message "%s: %s (已复制)" (upcase (symbol-name algo)) hash)))
+(transient-define-prefix my-hash-menu ()
+  "Hash 计算菜单"
+  [:description "选择要计算的哈希算法"
+                ("m" "MD5"    (lambda () (interactive) (hash-calc 'md5)))
+                ("1" "SHA1"   (lambda () (interactive) (hash-calc 'sha1)))
+                ("2" "SHA256" (lambda () (interactive) (hash-calc 'sha256)))
+                ("5" "SHA512" (lambda () (interactive) (hash-calc 'sha512)))])
+(global-set-key (kbd "C-c h") #'my-hash-menu)
 
 (provide 'init-locales)
 ;;; init-locales.el ends here
